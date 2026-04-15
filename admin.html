@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>BÈO ADMIN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Quicksand', sans-serif; background: #fff0f3; padding: 20px; }
+        .card { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 10px; text-align: center; border: 1px solid #ffdae0; border-radius: 10px; cursor: pointer; font-size: 12px; }
+        .active { background: #fe2c55; color: white; border-color: #fe2c55; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #333; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .list { height: 300px; overflow-y: auto; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
+        .item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+        .del { color: #fe2c55; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="text-align:center; color:#fe2c55">⚙️ QUẢN LÝ DỮ LIỆU</h2>
+        <div class="tabs">
+            <div class="tab active" id="t-ban" onclick="setTab('ban')">TỪ CẤM</div>
+            <div class="tab" id="t-acr" onclick="setTab('acr')">VIẾT TẮT</div>
+            <div class="tab" id="t-emo" onclick="setTab('emo')">ICON</div>
+            <div class="tab" id="t-bot" onclick="setTab('bot')">TRỢ LÝ</div>
+        </div>
+
+        <div id="u-ban">
+            <input type="text" id="i-ban" placeholder="Từ cấm...">
+            <button onclick="add('words', {word: document.getElementById('i-ban').value})">THÊM</button>
+            <div class="list" id="l-ban"></div>
+        </div>
+        </div>
+
+    <script>
+        async function load() {
+            const b = await (await fetch('/api/words')).json();
+            document.getElementById('l-ban').innerHTML = b.map(x => `<div class="item"><span>${x}</span><span class="del" onclick="del('words','${x}')">XOÁ</span></div>`).join('');
+            // Load các phần khác tương tự...
+        }
+        async function add(p, b) { await fetch('/api/'+p, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(b)}); load(); }
+        async function del(p, id) { await fetch(`/api/${p}/${encodeURIComponent(id)}`, {method:'DELETE'}); load(); }
+        load();
+        function setTab(t) { /* Logic chuyển tab */ }
+    </script>
+</body>
+</html>

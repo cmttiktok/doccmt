@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDOL BÈO - LUXURY TTS</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --main: #ff85a2; 
+            --main-dark: #fe2c55;
+            --bg: #fff0f3; 
+            --panel: rgba(255, 255, 255, 0.8);
+            --text: #4a1c2c;
+            --glass: rgba(255, 255, 255, 0.4);
+        }
+        body { 
+            font-family: 'Quicksand', sans-serif; 
+            background: linear-gradient(135deg, #fce4ec 0%, #ffc1e3 100%);
+            color: var(--text); 
+            margin: 0; padding: 15px; 
+            display: flex; gap: 20px; 
+            min-height: 100vh; box-sizing: border-box;
+            flex-direction: row;
+        }
+        @media (max-width: 850px) { body { flex-direction: column; } }
+
+        .column { 
+            background: var(--panel); 
+            backdrop-filter: blur(15px);
+            padding: 25px; 
+            border-radius: 25px; 
+            border: 2px solid #fff; 
+            display: flex; flex-direction: column; 
+            box-shadow: 0 10px 30px rgba(254, 44, 85, 0.1);
+        }
+        .left { flex: 1; border-top: 5px solid var(--main-dark); } 
+        .right { flex: 1.5; }
+
+        h3 { color: var(--main-dark); margin-top: 0; font-weight: 700; text-align: center; letter-spacing: 1px; }
+
+        input, button { 
+            padding: 12px; margin: 8px 0; border-radius: 15px; 
+            border: 1px solid #ffc1e3; width: 100%; box-sizing: border-box; 
+            outline: none; font-family: inherit;
+        }
+        input:focus { border-color: var(--main-dark); box-shadow: 0 0 8px rgba(254,44,85,0.2); }
+
+        button { 
+            background: linear-gradient(to right, #ff85a2, #fe2c55); 
+            color: white; font-weight: 700; cursor: pointer; border: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(254, 44, 85, 0.3); }
+
+        .list-box { 
+            flex-grow: 1; overflow-y: auto; background: var(--glass); 
+            padding: 15px; border-radius: 18px; margin-top: 10px; 
+            border: 1px solid rgba(255,255,255,0.5); max-height: 300px;
+        }
+        .msg { font-size: 14px; border-bottom: 1px solid rgba(255,133,162,0.1); padding: 10px 0; }
+
+        .setting-row { 
+            display: flex; align-items: center; justify-content: space-between; 
+            background: rgba(255, 255, 255, 0.6); padding: 10px 15px; 
+            border-radius: 15px; margin: 6px 0; font-size: 13px; font-weight: 600;
+        }
+        /* Chỉ nhắc PK style */
+        .pk-only-mode { background: #ffebee; border: 1px solid #ffcdd2; }
+
+        .tab-container { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; }
+        .tab-btn { 
+            background: white; flex: 1; min-width: 80px; padding: 10px; 
+            border-radius: 12px; cursor: pointer; text-align: center; 
+            font-size: 11px; font-weight: 700; border: 1px solid #ffdae0;
+        }
+        .tab-active { background: var(--main-dark); color: white; border-color: var(--main-dark); }
+
+        /* Switch UI */
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { 
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; 
+            background-color: #ddd; border-radius: 34px; transition: .4s; 
+        }
+        .slider:before { 
+            position: absolute; content: ""; height: 16px; width: 16px; 
+            left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .4s; 
+        }
+        input:checked + .slider { background-color: var(--main-dark); }
+        input:checked + .slider:before { transform: translateX(18px); }
+    </style>
+</head>
+<body>
+    <div class="column left">
+        <h3>💖 BÈO DASHBOARD</h3>
+        <input type="text" id="user" placeholder="Nhập ID TikTok của Bèo...">
+        <button onclick="start()">KẾT NỐI NGAY</button>
+        
+        <div class="setting-row pk-only-mode" style="color: #d32f2f;">
+            <span>⚠️ CHỈ NHẮC PK (TẮT HẾT CMT):</span>
+            <label class="switch"><input type="checkbox" id="pkOnlyToggle"><span class="slider"></span></label>
+        </div>
+
+        <div class="setting-row"><span>🔊 Chào người vào:</span><label class="switch"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
+        <div class="setting-row"><span>🎁 Cảm ơn quà:</span><label class="switch"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
+        <div class="setting-row"><span>🤖 Trợ lý ảo:</span><label class="switch"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
+        <div class="setting-row"><span>🔥 Nhắc PK 20s:</span><label class="switch"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
+        
+        <p id="stt" style="color:var(--main-dark); font-size:13px; font-weight:bold; text-align:center;">Sẵn sàng kết nối...</p>
+        <div class="list-box" id="chat"></div>
+    </div>
+
+    <div class="column right">
+        <div class="tab-container">
+            <div class="tab-btn tab-active" id="btn-ban" onclick="switchTab('ban')">TỪ CẤM</div>
+            <div class="tab-btn" id="btn-acr" onclick="switchTab('acr')">VIẾT TẮT</div>
+            <div class="tab-btn" id="btn-emo" onclick="switchTab('emo')">ICON</div>
+            <div class="tab-btn" id="btn-bot" onclick="switchTab('bot')">TRỢ LÝ</div>
+        </div>
+        
+        <div id="tab-ban-ui">
+            <input type="text" id="new-word" placeholder="Nhập từ muốn chặn...">
+            <button onclick="addWord()">THÊM VÀO DANH SÁCH</button>
+            <div class="list-box" id="word-list"></div>
+        </div>
+
+        <div id="tab-acr-ui" style="display:none;">
+            <input type="text" id="acr-key" placeholder="Viết tắt (vd: k)">
+            <input type="text" id="acr-val" placeholder="Dịch ra (vd: không)">
+            <button onclick="addAcr()">LƯU VIẾT TẮT</button>
+            <div class="list-box" id="acr-list"></div>
+        </div>
+
+        <div id="tab-emo-ui" style="display:none;">
+            <input type="text" id="emo-icon" placeholder="Icon (Emoji)">
+            <input type="text" id="emo-text" placeholder="Cách đọc icon">
+            <button onclick="addEmo()">LƯU ICON</button>
+            <div class="list-box" id="emo-list"></div>
+        </div>
+
+        <div id="tab-bot-ui" style="display:none;">
+            <input type="text" id="bot-key" placeholder="Khách hỏi (vd: bèo đâu)">
+            <input type="text" id="bot-res" placeholder="Trả lời (vd: Bèo đang đi uống nước ạ)">
+            <button onclick="addBot()">THÊM KỊCH BẢN</button>
+            <div class="list-box" id="bot-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let queue = [], playing = false;
+
+        function switchTab(t) {
+            ['ban','acr','emo','bot'].forEach(tab => { 
+                document.getElementById(`tab-${tab}-ui`).style.display = tab === t ? 'block' : 'none'; 
+                document.getElementById(`btn-${tab}`).classList.toggle('tab-active', tab === t); 
+            });
+        }
+
+        // --- Các hàm API giữ nguyên logic cũ ---
+        async function loadData() {
+            const words = await (await fetch('/api/words')).json();
+            document.getElementById('word-list').innerHTML = words.map(w => `<div class="msg"><span>${w}</span><span onclick="delWord('${w}')" style="color:#fe2c55;float:right;cursor:pointer;font-weight:bold;">XOÁ</span></div>`).join('');
+            const acrs = await (await fetch('/api/acronyms')).json();
+            document.getElementById('acr-list').innerHTML = acrs.map(a => `<div class="msg"><span>${a.key} ➜ ${a.value}</span><span onclick="delAcr('${a.key}')" style="color:#fe2c55;float:right;cursor:pointer;font-weight:bold;">XOÁ</span></div>`).join('');
+            const emos = await (await fetch('/api/emojis')).json();
+            document.getElementById('emo-list').innerHTML = emos.map(e => `<div class="msg"><span>${e.icon} ➜ ${e.text}</span><span onclick="delEmo('${e._id}')" style="color:#fe2c55;float:right;cursor:pointer;font-weight:bold;">XOÁ</span></div>`).join('');
+            const bots = await (await fetch('/api/bot')).json();
+            document.getElementById('bot-list').innerHTML = bots.map(b => `<div class="msg"><b>Hỏi:</b> ${b.keyword}<br><b>TL:</b> ${b.response} <span onclick="delBot('${b._id}')" style="color:#fe2c55;float:right;cursor:pointer;font-weight:bold;">XOÁ</span></div>`).join('');
+        }
+
+        async function addBot() { 
+            if(!document.getElementById('bot-key').value || !document.getElementById('bot-res').value) return;
+            await fetch('/api/bot', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({keyword: document.getElementById('bot-key').value, response: document.getElementById('bot-res').value}) });
+            document.getElementById('bot-key').value=''; document.getElementById('bot-res').value=''; loadData(); 
+        }
+        async function delBot(id) { await fetch(`/api/bot/${id}`, { method: 'DELETE' }); loadData(); }
+        async function addWord() { 
+            const word = document.getElementById('new-word').value;
+            if(!word) return;
+            await fetch('/api/words', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({word}) }); 
+            document.getElementById('new-word').value = ''; loadData(); 
+        }
+        async function delWord(w) { await fetch(`/api/words/${encodeURIComponent(w)}`, { method: 'DELETE' }); loadData(); }
+        async function addAcr() { 
+            const key = document.getElementById('acr-key').value;
+            const value = document.getElementById('acr-val').value;
+            if(!key || !value) return;
+            await fetch('/api/acronyms', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({key, value}) }); 
+            document.getElementById('acr-key').value=''; document.getElementById('acr-val').value=''; loadData(); 
+        }
+        async function delAcr(k) { await fetch(`/api/acronyms/${encodeURIComponent(k)}`, { method: 'DELETE' }); loadData(); }
+        async function addEmo() { 
+            const icon = document.getElementById('emo-icon').value;
+            const text = document.getElementById('emo-text').value;
+            if(!icon || !text) return;
+            await fetch('/api/emojis', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({icon, text}) }); 
+            document.getElementById('emo-icon').value=''; document.getElementById('emo-text').value=''; loadData(); 
+        }
+        async function delEmo(id) { await fetch(`/api/emojis/${id}`, { method: 'DELETE' }); loadData(); }
+
+        function start() { 
+            const user = document.getElementById('user').value;
+            if(!user) return alert("Nhập ID TikTok đã Tùng Anh ơi!");
+            socket.emit('set-username', user); 
+        }
+
+        socket.on('status', m => document.getElementById('stt').innerText = m);
+
+        socket.on('audio-data', d => {
+            const chat = document.getElementById('chat');
+            const div = document.createElement('div'); div.className = 'msg';
+            const color = d.type === 'chat' ? '#fe2c55' : '#2ecc71';
+            div.innerHTML = `<b style="color:${color}">${d.user}:</b> ${d.comment}`;
+            chat.prepend(div);
+
+            if (d.audio) {
+                // LOGIC TỐI ƯU: KIỂM TRA CHẾ ĐỘ "CHỈ NHẮC PK"
+                const isPkOnly = document.getElementById('pkOnlyToggle').checked;
+                
+                if (isPkOnly) {
+                    // Nếu đang bật "Chỉ nhắc PK", chỉ cho phép loại audio 'pk' vào hàng chờ
+                    if (d.type === 'pk' && document.getElementById('pkToggle').checked) {
+                        queue.push(d.audio);
+                    }
+                } else {
+                    // Nếu KHÔNG bật "Chỉ nhắc PK", kiểm tra các switch lẻ như cũ
+                    if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
+                    if (d.type === 'gift' && !document.getElementById('giftToggle').checked) return;
+                    if (d.type === 'pk' && !document.getElementById('pkToggle').checked) return;
+                    if (d.type === 'bot' && !document.getElementById('botToggle').checked) return;
+                    
+                    queue.push(d.audio); 
+                }
+
+                if (!playing) play();
+            }
+        });
+
+        function play() {
+            if (!queue.length) { playing = false; return; }
+            playing = true; 
+            const a = new Audio(queue.shift());
+            a.onended = () => setTimeout(play, 400); 
+            a.play().catch(() => play());
+        }
+        loadData();
+    </script>
+</body>
+</html>
