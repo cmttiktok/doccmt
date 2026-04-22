@@ -13,7 +13,7 @@
             --neon-pink: #ff85a1;
             --bg: #fff0f3; 
             --panel: #ffffff; 
-            --system-msg: #2ecc71; /* Xanh lá cho hệ thống */
+            --system-msg: #2ecc71; 
         }
         body { 
             font-family: 'Quicksand', sans-serif; 
@@ -25,16 +25,15 @@
             gap: 15px; 
             height: 100vh; 
             box-sizing: border-box; 
+            overflow: hidden; /* Ngăn toàn bộ trang bị kéo dài */
         }
         
-        /* RESPONSIVE: 1 CỘT CHO MOBILE */
         @media (max-width: 768px) {
-            body { flex-direction: column; height: auto; }
+            body { flex-direction: column; height: auto; overflow: auto; }
             .left-col { width: 100% !important; }
-            .right-col { height: 500px !important; }
+            .right-col { height: 480px !important; min-height: 480px; }
         }
 
-        /* TIỆN ÍCH ĐỒNG HỒ & LỊCH */
         .widgets { 
             background: white;
             padding: 15px;
@@ -47,7 +46,6 @@
         #date-container { font-size: 13px; color: #888; font-weight: bold; }
         .lunar-txt { color: #d63384; }
 
-        /* CỘT TRÁI */
         .left-col { width: 320px; display: flex; flex-direction: column; gap: 15px; flex-shrink: 0; }
         .card { 
             background: var(--panel); 
@@ -57,28 +55,34 @@
             box-shadow: 0 8px 20px rgba(254, 44, 85, 0.05);
         }
         
-        /* HIỆU ỨNG NEON HỒNG NHẸ */
         .neon-border { border: 2px solid var(--pink); box-shadow: 0 0 10px var(--neon-pink); }
 
-        /* CỘT PHẢI: CHAT */
         .right-col { 
             flex: 1; display: flex; flex-direction: column; 
             background: var(--panel); border-radius: 25px; 
             border: 2px solid #fff; overflow: hidden; padding: 20px; 
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
-            height: 100%;
+            height: calc(100vh - 30px); /* Cố định chiều cao theo màn hình */
         }
         
         #chat { 
-            flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; 
-            max-height: 100%; scrollbar-width: thin;
+            flex: 1; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column-reverse; 
+            scrollbar-width: thin;
+            padding-right: 5px;
         }
+
+        /* Tùy chỉnh thanh cuộn cho đẹp */
+        #chat::-webkit-scrollbar { width: 4px; }
+        #chat::-webkit-scrollbar-thumb { background: var(--light-pink); border-radius: 10px; }
+
         .msg { padding: 12px; border-bottom: 1px solid #fdf0f2; font-size: 15px; animation: slide 0.3s ease; line-height: 1.4; }
         .msg.system { color: var(--system-msg); font-weight: bold; }
         .msg.user { color: #444; }
         @keyframes slide { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* INPUT & BUTTON */
         input[type="text"] { 
             width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #eee; 
             background: #fafafa; color: #333; outline: none; margin-bottom: 10px; box-sizing: border-box; 
@@ -89,7 +93,6 @@
         }
         button.conn-btn:hover { box-shadow: 0 5px 15px var(--neon-pink); opacity: 0.9; }
         
-        /* SWITCH */
         .sw-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f9f9f9; font-size: 13px; font-weight: bold; }
         .switch { position: relative; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -153,13 +156,11 @@
         let queue = [], playing = false;
         let currentUserId = "";
 
-        // THIẾT LẬP MOMENT TIẾNG VIỆT
         moment.locale('vi');
 
         function updateTime() {
             const now = moment();
             document.getElementById('clock').innerText = now.format('HH:mm:ss');
-            // Sửa Dương lịch hiển thị đầy đủ Thứ, Ngày Tháng Năm
             document.getElementById('date-solar').innerText = now.format('dddd, DD/MM/YYYY');
             const lunar = now.lunar();
             document.getElementById('date-lunar').innerText = `Âm: ${lunar.format('DD/MM')}`;
@@ -191,19 +192,16 @@
 
         socket.on('audio-data', d => {
             const isSystem = ['welcome', 'gift', 'pk', 'bot'].includes(d.type);
-            
             if (isSystem && document.getElementById('hideSystem').checked) return;
 
             const chat = document.getElementById('chat');
             const div = document.createElement('div');
             div.className = `msg ${isSystem ? 'system' : 'user'}`;
-            
-            // Comment hệ thống xanh lá, người dùng hồng
             const nameColor = isSystem ? 'var(--system-msg)' : 'var(--pink)';
             div.innerHTML = `<b style="color:${nameColor}">${d.user}:</b> ${d.comment}`;
             chat.prepend(div);
 
-            // Giới hạn 12 dòng hiển thị trong khung nhìn (đã tối ưu bằng CSS flex-direction)
+            // Giữ lại 50 cmt trong bộ nhớ nhưng chỉ hiển thị 12 dòng đầu nhờ khung cố định
             if (chat.childNodes.length > 50) chat.removeChild(chat.lastChild);
 
             if (d.audio && !document.getElementById('masterMute').checked) {
