@@ -2,99 +2,204 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BÈO CONTROL PANEL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BÈO CONTROL PANEL - NEON EDITION</title>
     <script src="/socket.io/socket.io.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --pink: #fe2c55; --bg: #fff0f3; --panel: #ffffff; }
-        body { font-family: 'Quicksand', sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; gap: 15px; height: 100vh; box-sizing: border-box; }
+        :root { 
+            --pink: #fe2c55; 
+            --neon-pink: #ff0055;
+            --bg: #0f0f0f; 
+            --panel: rgba(255, 255, 255, 0.05); 
+            --glass: rgba(255, 255, 255, 0.1);
+            --system-msg: #00ff88;
+        }
+        body { 
+            font-family: 'Quicksand', sans-serif; 
+            background: var(--bg); 
+            color: #fff;
+            margin: 0; 
+            padding: 15px; 
+            display: flex; 
+            gap: 15px; 
+            height: 100vh; 
+            box-sizing: border-box; 
+        }
         
-        /* CỘT TRÁI: NÚT BẤM */
-        .left-col { width: 300px; display: flex; flex-direction: column; gap: 15px; flex-shrink: 0; }
-        .card { background: var(--panel); padding: 20px; border-radius: 20px; border: 2px solid #fff; box-shadow: 0 8px 20px rgba(254, 44, 85, 0.05); }
+        /* RESPONSIVE: 1 CỘT CHO MOBILE */
+        @media (max-width: 768px) {
+            body { flex-direction: column; height: auto; }
+            .left-col { width: 100% !important; }
+            .right-col { height: 450px !important; }
+        }
+
+        /* TIỆN ÍCH ĐỒNG HỒ & LỊCH */
+        .widgets { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; color: #ffdae0; text-shadow: 0 0 5px var(--neon-pink); }
+
+        /* CỘT TRÁI */
+        .left-col { width: 320px; display: flex; flex-direction: column; gap: 15px; flex-shrink: 0; }
+        .card { 
+            background: var(--panel); 
+            backdrop-filter: blur(10px);
+            padding: 20px; 
+            border-radius: 20px; 
+            border: 1px solid var(--glass); 
+            box-shadow: 0 0 15px rgba(254, 44, 85, 0.1);
+        }
         
+        /* HIỆU ỨNG NEON */
+        .neon-border { border: 2px solid var(--pink); box-shadow: 0 0 10px var(--neon-pink), inset 0 0 5px var(--neon-pink); }
+
         /* CỘT PHẢI: CHAT */
-        .right-col { flex: 1; display: flex; flex-direction: column; background: var(--panel); border-radius: 25px; border: 2px solid #fff; overflow: hidden; padding: 20px; box-shadow: 0 8px 20px rgba(254, 44, 85, 0.05); }
-        #chat { flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; }
-        .msg { padding: 12px; border-bottom: 1px solid #fff5f7; font-size: 16px; animation: slide 0.3s ease; }
+        .right-col { 
+            flex: 1; display: flex; flex-direction: column; 
+            background: var(--panel); border-radius: 25px; 
+            border: 1px solid var(--glass); overflow: hidden; padding: 20px; 
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            height: 100%;
+        }
+        
+        /* GIỚI HẠN DÒNG COMMENT (Khoảng 12 dòng) */
+        #chat { 
+            flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; 
+            max-height: 100%; scrollbar-width: thin;
+        }
+        .msg { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 15px; animation: slide 0.3s ease; line-height: 1.4; }
+        .msg.system { color: var(--system-msg); }
+        .msg.user { color: #fff; }
         @keyframes slide { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
 
-        /* UI ELEMENTS */
-        input[type="text"] { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ffdae0; outline: none; margin-bottom: 10px; box-sizing: border-box; }
-        button.conn-btn { width: 100%; padding: 12px; background: var(--pink); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        /* INPUT & BUTTON */
+        input[type="text"] { 
+            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--glass); 
+            background: rgba(0,0,0,0.3); color: #fff; outline: none; margin-bottom: 10px; box-sizing: border-box; 
+        }
+        button.conn-btn { 
+            width: 100%; padding: 12px; background: var(--pink); color: white; border: none; 
+            border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        button.conn-btn:hover { box-shadow: 0 0 15px var(--neon-pink); transform: scale(1.02); }
         
-        .sw-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f9f9f9; font-size: 14px; font-weight: bold; color: #4a1c2c; }
-        .switch { position: relative; width: 38px; height: 20px; }
+        /* SWITCH */
+        .sw-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; font-weight: bold; }
+        .switch { position: relative; width: 34px; height: 18px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ddd; border-radius: 20px; transition: .4s; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .4s; }
-        input:checked + .slider { background: var(--pink); }
-        input:checked + .slider:before { transform: translateX(18px); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #444; border-radius: 20px; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .4s; }
+        input:checked + .slider { background: var(--pink); box-shadow: 0 0 8px var(--neon-pink); }
+        input:checked + .slider:before { transform: translateX(16px); }
 
-        .speed-box { margin-top: 10px; font-size: 12px; }
-        input[type="range"] { width: 100%; accent-color: var(--pink); margin-top: 5px; }
-        .admin-link { display: block; text-align: center; margin-top: 15px; color: var(--pink); text-decoration: none; font-size: 13px; font-weight: bold; }
+        .control-box { margin-top: 10px; font-size: 12px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 12px; }
+        input[type="range"] { width: 100%; accent-color: var(--pink); cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="left-col">
-        <div class="card">
-            <h3 style="margin: 0 0 15px 0; color: var(--pink); text-align: center;">KẾT NỐI LIVE</h3>
+        <div class="widgets">
+            <div id="clock">00:00:00</div>
+            <div id="date">Đang tải...</div>
+        </div>
+
+        <div class="card neon-border">
+            <h3 style="margin: 0 0 15px 0; color: var(--pink); text-align: center; text-shadow: 0 0 10px var(--neon-pink);">KẾT NỐI LIVE</h3>
             <input type="text" id="user" placeholder="Nhập ID TikTok...">
-            <button class="conn-btn" onclick="start()">KẾT NỐI NGAY</button>
-            <div id="stt" style="font-size: 11px; text-align: center; margin-top: 8px; color: #888;">Chưa kết nối</div>
+            <button class="conn-btn" id="btnConn" onclick="start()">KẾT NỐI NGAY</button>
+            <div id="stt" style="font-size: 11px; text-align: center; margin-top: 8px; color: #aaa;">Chưa kết nối</div>
         </div>
 
         <div class="card">
-            <h3 style="margin: 0 0 10px 0; font-size: 15px;">ĐIỀU KHIỂN</h3>
-            <div class="sw-item" style="color: blue;"><span>CHỈ NHẮC PK:</span><label class="switch"><input type="checkbox" id="pkOnly"><span class="slider"></span></label></div>
+            <h3 style="margin: 0 0 10px 0; font-size: 15px; color: var(--pink);">ĐIỀU KHIỂN</h3>
+            <div class="sw-item"><span>Mute toàn hệ thống:</span><label class="switch"><input type="checkbox" id="masterMute"><span class="slider"></span></label></div>
+            <div class="sw-item"><span>Ẩn cmt hệ thống:</span><label class="switch"><input type="checkbox" id="hideSystem"><span class="slider"></span></label></div>
             <div class="sw-item"><span>Chào khách:</span><label class="switch"><input type="checkbox" id="welcomeToggle" checked><span class="slider"></span></label></div>
             <div class="sw-item"><span>Đọc Quà:</span><label class="switch"><input type="checkbox" id="giftToggle" checked><span class="slider"></span></label></div>
             <div class="sw-item"><span>Nhắc PK:</span><label class="switch"><input type="checkbox" id="pkToggle" checked><span class="slider"></span></label></div>
             <div class="sw-item"><span>Trợ lý:</span><label class="switch"><input type="checkbox" id="botToggle" checked><span class="slider"></span></label></div>
             
-            <div class="speed-box">
-                <b>TỐC ĐỘ ĐỌC: <span id="speedVal">1.0</span>x</b>
+            <div class="control-box">
+                <b>TỐC ĐỘ ĐỌC: <span id="speedVal" style="color:var(--pink)">1.0</span>x</b>
                 <input type="range" id="speechSpeed" min="0.5" max="2" step="0.1" value="1" oninput="document.getElementById('speedVal').innerText=this.value">
             </div>
-        </div>
 
-        <a href="/admin" target="_blank" class="admin-link">⚙️ CÀI ĐẶT TỪ CẤM / ICON</a>
+            <div class="control-box">
+                <b>ÂM LƯỢNG: <span id="volVal" style="color:var(--pink)">100</span>%</b>
+                <input type="range" id="masterVolume" min="0" max="1" step="0.1" value="1" oninput="document.getElementById('volVal').innerText=Math.round(this.value*100)">
+            </div>
+        </div>
+        <a href="/admin" target="_blank" style="color:var(--pink); text-align:center; display:block; font-size:12px; text-decoration:none;">⚙️ QUẢN LÝ DỮ LIỆU</a>
     </div>
 
     <div class="right-col">
-        <h3 style="margin: 0 0 15px 0; color: var(--pink); border-bottom: 2px solid #fff5f7; padding-bottom: 10px;">BÌNH LUẬN TRỰC TIẾP</h3>
+        <h3 style="margin: 0 0 15px 0; color: var(--pink); border-bottom: 1px solid var(--glass); padding-bottom: 10px; text-shadow: 0 0 5px var(--neon-pink);">BÌNH LUẬN TRỰC TIẾP</h3>
         <div id="chat"></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment-lunar/moment-lunar.min.js"></script>
     <script>
         const socket = io();
         let queue = [], playing = false;
+        let currentUserId = "";
 
+        // ĐỒNG HỒ & LỊCH
+        function updateTime() {
+            const now = moment();
+            document.getElementById('clock').innerText = now.format('HH:mm:ss');
+            const lunar = now.lunar();
+            document.getElementById('date').innerText = `${now.format('DD/MM')} - Âm: ${lunar.format('DD/MM')}`;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // TỰ ĐỘNG KẾT NỐI LẠI
         function start() {
             const u = document.getElementById('user').value;
-            if(u) socket.emit('set-username', u);
+            if(u) {
+                currentUserId = u;
+                socket.emit('set-username', u);
+                document.getElementById('btnConn').innerText = "ĐANG KẾT NỐI...";
+            }
         }
 
-        socket.on('status', m => document.getElementById('stt').innerText = m);
+        socket.on('status', m => {
+            document.getElementById('stt').innerText = m;
+            if (m.includes("Đã kết nối")) {
+                document.getElementById('btnConn').innerText = "ĐÃ KẾT NỐI";
+                document.getElementById('btnConn').style.background = "#2ecc71";
+            }
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('stt').innerText = "Mất kết nối server, đang thử lại...";
+            if(currentUserId) setTimeout(() => socket.emit('set-username', currentUserId), 5000);
+        });
 
         socket.on('audio-data', d => {
+            const isSystem = ['welcome', 'gift', 'pk', 'bot'].includes(d.type);
+            
+            // Xử lý ẩn comment hệ thống
+            if (isSystem && document.getElementById('hideSystem').checked) return;
+
             const chat = document.getElementById('chat');
-            const div = document.createElement('div'); div.className = 'msg';
-            div.innerHTML = `<b style="color:var(--pink)">${d.user}:</b> ${d.comment}`;
+            const div = document.createElement('div');
+            div.className = `msg ${isSystem ? 'system' : 'user'}`;
+            
+            // Phân biệt màu sắc dựa trên type
+            const nameColor = isSystem ? 'var(--system-msg)' : 'var(--pink)';
+            div.innerHTML = `<b style="color:${nameColor}">${d.user}:</b> ${d.comment}`;
             chat.prepend(div);
 
-            if (d.audio) {
-                const pkOnly = document.getElementById('pkOnly').checked;
-                if (pkOnly) {
-                    if (d.type === 'pk' && document.getElementById('pkToggle').checked) queue.push(d.audio);
-                } else {
-                    if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
-                    if (d.type === 'gift' && !document.getElementById('giftToggle').checked) return;
-                    if (d.type === 'pk' && !document.getElementById('pkToggle').checked) return;
-                    if (d.type === 'bot' && !document.getElementById('botToggle').checked) return;
-                    queue.push(d.audio);
-                }
+            // Giới hạn số dòng hiển thị để tránh lag
+            if (chat.childNodes.length > 50) chat.removeChild(chat.lastChild);
+
+            if (d.audio && !document.getElementById('masterMute').checked) {
+                if (d.type === 'welcome' && !document.getElementById('welcomeToggle').checked) return;
+                if (d.type === 'gift' && !document.getElementById('giftToggle').checked) return;
+                if (d.type === 'pk' && !document.getElementById('pkToggle').checked) return;
+                if (d.type === 'bot' && !document.getElementById('botToggle').checked) return;
+                
+                queue.push(d.audio);
                 if (!playing) play();
             }
         });
@@ -104,6 +209,7 @@
             playing = true;
             const a = new Audio(queue.shift());
             a.playbackRate = parseFloat(document.getElementById('speechSpeed').value);
+            a.volume = parseFloat(document.getElementById('masterVolume').value);
             a.onended = () => setTimeout(play, 300);
             a.play().catch(() => play());
         }
